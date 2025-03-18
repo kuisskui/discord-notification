@@ -1,5 +1,10 @@
 from datetime import datetime, timezone
 
+import MetaTrader5
+
+import mt5
+from models import Commission, TradeDirection, Position
+
 
 def format_markdown_table(table):
     """
@@ -49,7 +54,38 @@ def create_report(commissions):
     detail = format_markdown_table(table_data)
 
     report = \
-f"""```Scrape Commission: {utc_now.isoformat()}
+        f"""```Scrape Commission: {utc_now.isoformat()}
 {detail}
 ```"""
     return report
+
+
+def get_trade_direction(commissions: [Commission]):
+    trade_direction_list = []
+    for commission in commissions:
+        trade_direction = TradeDirection()
+        trade_direction.set_symbol(commission.get_symbol())
+        if commission.get_swap_long() <= commission.get_swap_short():  # the commission is negative
+            trade_direction.set_type(0)
+        else:
+            trade_direction.set_type(1)
+        trade_direction_list.append(trade_direction)
+    return trade_direction_list
+
+
+def is_my_positions_follow_trade_direction(positions: list, trade_directions: list) -> bool:
+    trade_direction_dict = {td.get_symbol(): td.get_type() for td in trade_directions}
+
+    for position in positions:
+        symbol = position.get_symbol()
+        if symbol in trade_direction_dict:
+            if position.get_type() != trade_direction_dict[symbol]:
+                return False
+    return True
+
+
+def create_message(messages: []):
+    final_message = ""
+    for message in messages:
+        final_message += f"\n{message}"
+    return final_message

@@ -1,6 +1,6 @@
 import os
 import MetaTrader5 as mt5
-from models import Commission
+from models import Commission, Position
 from typing import List
 from dotenv import load_dotenv
 
@@ -18,7 +18,7 @@ def initialize():
         print("initialize() failed, error code =", mt5.last_error())
         quit()
 
-    authorized = mt5.login(ACCOUNT, password=PASSWORD, server=SERVER)
+    authorized = mt5.login(int(ACCOUNT), password=PASSWORD, server=SERVER)
 
     if authorized:
         print("successfully logged in at account #{}".format(ACCOUNT))
@@ -37,6 +37,20 @@ def get_commission(symbols: List):
         commission.set_swap_short(symbol_info.swap_short)
         commissions.append(commission)
     return commissions
+
+
+def get_positions(symbols: List):
+    positions = []
+    for symbol in symbols:
+        position = Position()
+        received_position = mt5.positions_get(symbol=symbol)
+        if not received_position:
+            continue
+        position.set_symbol(received_position[0].symbol)
+        position.set_type(received_position[0].type)
+        positions.append(position)
+
+    return positions
 
 
 def shutdown():

@@ -1,6 +1,6 @@
 import os
 
-from utils import create_report
+from utils import create_report, get_trade_direction, is_my_positions_follow_trade_direction, create_message
 import requests
 import mt5
 from dotenv import load_dotenv
@@ -16,10 +16,20 @@ def main():
     try:
         mt5.initialize()
         commissions = mt5.get_commission(symbols)
-        report = create_report(commissions)
-        print(report)
+        my_positions = mt5.get_positions(symbols)
+        trade_direction_list = get_trade_direction(commissions)
 
-        data = {"content": report}
+        if not is_my_positions_follow_trade_direction(my_positions, trade_direction_list):
+            flag = "RED Flag!!!"
+        else:
+            flag = "Everything is fine for today :)"
+
+        report = create_report(commissions)
+
+        message = create_message([flag, report])
+        print(message)
+
+        data = {"content": message}
 
         requests.post(WEBHOOK_URL, json=data)
         print("Send the report.")
