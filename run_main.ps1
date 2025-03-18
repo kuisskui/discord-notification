@@ -35,5 +35,5 @@ if ($isUptodate -eq 0){
 
 Write-Host "Execute the main"
 
-
+python .\main.py
 
