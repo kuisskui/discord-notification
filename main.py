@@ -12,6 +12,7 @@ symbols = ["AUDUSD", "DXY", "EURUSD", "GBPUSD", "NZDUSD", "USDCAD", "USDCHF", "U
 
 
 def main():
+    print("Start execution for main function.")
     try:
         mt5.initialize()
         commissions = mt5.get_commission(symbols)
@@ -21,9 +22,11 @@ def main():
         data = {"content": report}
 
         requests.post(WEBHOOK_URL, json=data)
+        print("Send the report.")
     except Exception as e:
         print(e)
     finally:
+        print("End execution for main function.")
         mt5.shutdown()
 
 
