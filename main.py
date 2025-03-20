@@ -13,6 +13,7 @@ symbols = ["AUDUSD", "DXY", "EURUSD", "GBPUSD", "NZDUSD", "USDCAD", "USDCHF", "U
 
 def main():
     print("Start execution for main function.")
+    message = "Message is empty!  "
     try:
         mt5.initialize()
         commissions = mt5.get_commission(symbols)
@@ -29,14 +30,14 @@ def main():
         message = create_message([flag, report])
         print(message)
 
-        data = {"content": message}
-
-        requests.post(WEBHOOK_URL, json=data)
         print("Send the report.")
     except Exception as e:
+        message = create_message([str(e), ])
         print(e)
     finally:
         print("End execution for main function.")
+        data = {"content": message}
+        requests.post(WEBHOOK_URL, json=data)
         mt5.shutdown()
 
 
