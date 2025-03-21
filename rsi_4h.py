@@ -1,39 +1,61 @@
 import os
-from mt5.indicators import get_rsi
+import logging
+
 from MetaTrader5 import TIMEFRAME_H4
-from discord_apis.Discord import Discord
-from utils import get_trade_directions
+from mt5 import initialize, shutdown
+from mt5.indicators import get_rsi
 from mt5.provider import get_commission
-from mt5 import initialize
+from utils import get_trade_directions
+from discord_apis.Discord import Discord
 
-
-WEBHOOK_URL = os.getenv('WEBHOOK_URL')
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 SYMBOL = "EURUSD"
 TIMEFRAME = TIMEFRAME_H4
+RSI_OVERSOLD = 40.0
+RSI_OVERBOUGHT = 60.0
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 discord = Discord()
 discord.add_channel(WEBHOOK_URL)
 
 
-def rsi_4h():
+def build_signal_message(rsi: float, direction_type: int) -> str:
+    """Constructs the notification message based on RSI and trade direction."""
+    if direction_type == 0 and rsi <= RSI_OVERSOLD:
+        signal = "BUY Opportunity!"
+    elif direction_type == 1 and rsi >= RSI_OVERBOUGHT:
+        signal = "SELL Opportunity!"
+    else:
+        return ""
+
+    return f"{signal}\nRSI 4H signal: {rsi:.2f}"
+
+
+def rsi_4h() -> None:
+    """Fetches 4‑hour RSI, determines trade signal, and notifies Discord if opportunity."""
     try:
-        print("initializing")
+        logging.info("Initializing MT5 connection")
         initialize()
+
         rsi = get_rsi(SYMBOL, TIMEFRAME)
         commissions = get_commission([SYMBOL])
-        direction = get_trade_directions(commissions)
+        direction = get_trade_directions(commissions)[0].get_type()
 
-        message = ""
-        if direction[0].get_type() == 0 and rsi <= 40:
-            message += "BUT Opportunity!"
-        if direction[0].get_type() == 1 and rsi >= 60:
-            message += "SELL Opportunity!"
-        message += "\n"
-        message += f"RSI signal: {rsi:.2f}"
-        print("Success Execution")
+        message = build_signal_message(rsi, direction)
+
+        if message:
+            logging.info("Sending notification: %s", message)
+            discord.notify_all(message)
+        else:
+            logging.info("No trading opportunity — RSI: %.2f, Direction: %s", rsi, direction)
+
     except Exception as e:
-        message = str(e)
-    discord.notify_all(message)
-    print(message)
+        logging.error("Error in RSI workflow: %s", e, exc_info=True)
+        discord.notify_all(f"⚠️ RSI Bot Error: {e}")
+    finally:
+        shutdown()
+        logging.info("MT5 connection closed")
 
 
-rsi_4h()
+if __name__ == "__main__":
+    rsi_4h()

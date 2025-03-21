@@ -1,47 +1,65 @@
 import os
+import logging
 
-from discord_apis.Discord import Discord
-from utils import create_report, get_trade_directions, is_my_positions_follow_trade_direction, create_message
-from mt5.provider import get_commission, get_positions
 import mt5
 from dotenv import load_dotenv
 
-load_dotenv()
-WEBHOOK_URL = os.environ.get('WEBHOOK_URL')
-symbols = ["AUDUSD", "DXY", "EURUSD", "GBPUSD", "NZDUSD", "USDCAD", "USDCHF", "USDJPY"]
+from discord_apis.Discord import Discord
+from mt5.provider import get_commission, get_positions
+from utils import (
+    create_report,
+    get_trade_directions,
+    is_my_positions_follow_trade_direction,
+    create_message,
+)
 
+load_dotenv()
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+SYMBOLS = ["AUDUSD", "DXY", "EURUSD", "GBPUSD", "NZDUSD", "USDCAD", "USDCHF", "USDJPY"]
+
+TITLE = "COMMISSION Check Daily"
 discord = Discord()
 discord.add_channel(WEBHOOK_URL)
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-def check_commission_daily():
-    print("Start execution for main function.")
-    title = "COMMISSION Check Daily"
-    message = "Message is empty!"
+
+def check_commission_daily() -> str:
+    """
+    Fetch commissions, positions, and trade directions;
+    builds and returns the formatted daily report message.
+    """
+    mt5.initialize()
     try:
-        mt5.initialize()
-        commissions = get_commission(symbols)
-        my_positions = get_positions(symbols)
-        trade_direction_list = get_trade_directions(commissions)
+        commissions = get_commission(SYMBOLS)
+        positions = get_positions(SYMBOLS)
+        trade_directions = get_trade_directions(commissions)
 
-        if not is_my_positions_follow_trade_direction(my_positions, trade_direction_list):
-            flag = "RED Flag!!!"
-        else:
-            flag = "Everything is fine for today :)"
+        flag = (
+            "RED Flag!!!"
+            if not is_my_positions_follow_trade_direction(positions, trade_directions)
+            else "Everything is fine for today 🙂"
+        )
 
         report = create_report(commissions)
+        return create_message([TITLE, flag, report])
 
-        message = create_message([title, flag, report])
-        print(message)
-
-        print("Send the report.")
-    except Exception as e:
-        message = create_message([str(e), ])
-        print(e)
     finally:
-        print("End execution for main function.")
-        discord.notify_all(message)
         mt5.shutdown()
 
 
-check_commission_daily()
+def main():
+    logging.info("Starting daily commission check.")
+    try:
+        message = check_commission_daily()
+        logging.info("Report generated; sending to Discord.")
+    except Exception as err:
+        message = create_message([f"⚠️ Error: {err}"])
+        logging.exception("Unhandled exception during commission check.")
+    finally:
+        discord.notify_all(message)
+        logging.info("Execution finished.")
+
+
+if __name__ == "__main__":
+    main()
