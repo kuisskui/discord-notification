@@ -1,9 +1,6 @@
 import MetaTrader5 as mt5
 from models import Commission, Position
 from typing import List
-from dotenv import load_dotenv
-
-load_dotenv()
 
 
 def get_commission(symbols: List):

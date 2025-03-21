@@ -60,7 +60,7 @@ def create_report(commissions):
     return report
 
 
-def get_trade_direction(commissions: [Commission]):
+def get_trade_directions(commissions: [Commission]):
     trade_direction_list = []
     for commission in commissions:
         trade_direction = TradeDirection()

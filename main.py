@@ -1,7 +1,7 @@
 import os
 
 from discord_apis.Discord import Discord
-from utils import create_report, get_trade_direction, is_my_positions_follow_trade_direction, create_message
+from utils import create_report, get_trade_directions, is_my_positions_follow_trade_direction, create_message
 import mt5
 from dotenv import load_dotenv
 
@@ -20,7 +20,7 @@ def main():
         mt5.initialize()
         commissions = mt5.get_commission(symbols)
         my_positions = mt5.get_positions(symbols)
-        trade_direction_list = get_trade_direction(commissions)
+        trade_direction_list = get_trade_directions(commissions)
 
         if not is_my_positions_follow_trade_direction(my_positions, trade_direction_list):
             flag = "RED Flag!!!"
