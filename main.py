@@ -1,14 +1,16 @@
 import os
 
+from discord_apis.Discord import Discord
 from utils import create_report, get_trade_direction, is_my_positions_follow_trade_direction, create_message
-import requests
 import mt5
 from dotenv import load_dotenv
 
 load_dotenv()
-
 WEBHOOK_URL = os.environ.get('WEBHOOK_URL')
 symbols = ["AUDUSD", "DXY", "EURUSD", "GBPUSD", "NZDUSD", "USDCAD", "USDCHF", "USDCHF"]
+
+discord = Discord()
+discord.add_channel(WEBHOOK_URL)
 
 
 def main():
@@ -36,8 +38,7 @@ def main():
         print(e)
     finally:
         print("End execution for main function.")
-        data = {"content": message}
-        requests.post(WEBHOOK_URL, json=data)
+        discord.notify_all(message)
         mt5.shutdown()
 
 
