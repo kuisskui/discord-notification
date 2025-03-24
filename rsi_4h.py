@@ -10,6 +10,8 @@ from discord_apis.Discord import Discord
 
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 SYMBOL = "EURUSD"
+SYMBOLS = ["EURUSD", "USDJPY"]
+
 TIMEFRAME = TIMEFRAME_H4
 RSI_OVERSOLD = 40.0
 RSI_OVERBOUGHT = 60.0
@@ -28,7 +30,7 @@ def build_signal_message(rsi: float, direction_type: int) -> str:
     else:
         return ""
 
-    return f"{signal}\nRSI 4H signal: {rsi:.2f}"
+    return f"{signal}\nRSI 4H signal: {rsi:.2f}\n"
 
 
 def rsi_4h() -> None:
@@ -36,18 +38,23 @@ def rsi_4h() -> None:
     try:
         logging.info("Initializing MT5 connection")
         initialize()
+        rsis = {}
 
-        rsi = get_rsi(SYMBOL, TIMEFRAME)
-        commissions = get_commission([SYMBOL])
-        direction = get_trade_directions(commissions)[0].get_type()
+        for symbol in SYMBOLS:
+            rsis[symbol] = get_rsi(SYMBOL, TIMEFRAME)
 
-        message = build_signal_message(rsi, direction)
+        commissions = get_commission(SYMBOLS)
+        directions = get_trade_directions(commissions)
+        messages = ""
 
-        if message:
-            logging.info("Sending notification: %s", message)
-            discord.notify_all(message)
+        for i in range(len(SYMBOLS)):
+            messages += build_signal_message(rsis[SYMBOLS[i]], directions[i].get_type())
+
+        if messages:
+            logging.info("Sending notification: %s", messages)
+            discord.notify_all(messages)
         else:
-            logging.info("No trading opportunity — RSI: %.2f, Direction: %s", rsi, direction)
+            logging.info("No trading opportunity — RSI: %.2f, Direction: %s", rsis, directions)
 
     except Exception as e:
         logging.error("Error in RSI workflow: %s", e, exc_info=True)
