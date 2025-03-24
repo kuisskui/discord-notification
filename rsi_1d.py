@@ -29,7 +29,7 @@ def rsi_1d() -> None:
         logging.info("RSI fetched: %.2f", rsi)
 
         if rsi >= RSI_OVERBOUGHT or rsi <= RSI_OVERSOLD:
-            message = f"RSI 1D signal: {rsi:.2f}"
+            message = f"{SYMBOL}: RSI 1D signal {rsi:.2f}"
             logging.info("Sending signal: %s", message)
             discord.notify_all(message)
         else:

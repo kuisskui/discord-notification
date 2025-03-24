@@ -22,9 +22,9 @@ discord.add_channel(WEBHOOK_URL)
 def build_signal_message(rsi: float, direction_type: int) -> str:
     """Constructs the notification message based on RSI and trade direction."""
     if direction_type == 0 and rsi <= RSI_OVERSOLD:
-        signal = "BUY Opportunity!"
+        signal = f"{SYMBOL}: BUY  Opportunity!"
     elif direction_type == 1 and rsi >= RSI_OVERBOUGHT:
-        signal = "SELL Opportunity!"
+        signal = f"{SYMBOL}: SELL  Opportunity!"
     else:
         return ""
 
