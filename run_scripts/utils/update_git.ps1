@@ -1,32 +1,25 @@
-git fetch origin
+# Path to your local git repository
+$RepoPath = "C:\Users\kuisskui\Desktop\discord-notification"
+# Discord Webhook URL
+$WebhookUrl = "https://discord.com/api/webhooks/1349760374517403698/fULeZmojgOeItgB3RDTHFs-0iuC_vITK_278Z_t4ThYUbTwVnj5KINDmgywCoUtipsdx"
 
-# Retrieve the local commit hash for the main branch
-$localHash = git rev-parse main 2>&1
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Error retrieving local main branch hash: $localHash"
-    exit 1
-}
+# Navigate to the repository
+Set-Location $RepoPath
 
-# Retrieve the remote commit hash for origin/main
-$remoteHash = git rev-parse origin/main 2>&1
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Error retrieving remote main branch hash: $remoteHash"
-    exit 1
-}
+# Pull from main branch and capture the output
+$GitOutput = git pull
 
-Write-Host "Local main commit hash: $localHash"
-Write-Host "Remote main commit hash: $remoteHash"
+# Check if there were updates
+if ($GitOutput -notmatch "Already up to date.") {
+    Write-Host "Repository updated. Sending Discord notification..."
 
-$isUptodate
-if ($localHash -eq $remoteHash) {
-    Write-Host "The main branch is up to date."
-    $isUptodate = 1
+    # Create the payload
+    $Message = @{
+        content = "Git repository has been updated."
+    }
+
+    # Send the message (convert JSON at send time)
+    Invoke-RestMethod -Uri $WebhookUrl -Method Post -Body ($Message | ConvertTo-Json -Depth 2 -Compress) -ContentType 'application/json'
 } else {
-    Write-Host "The main branch is not up to date."
-    $isUptodate = 0
-}
-
-if ($isUptodate -eq 0){
-    Write-Host "Pull the main."
-    git pull origin main
+    Write-Host "No updates found. No Discord message sent."
 }
