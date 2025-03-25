@@ -9,8 +9,7 @@ from utils import get_trade_directions
 from discord_apis.Discord import Discord
 
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-SYMBOL = "EURUSD"
-SYMBOLS = ["EURUSD", "USDJPY"]
+SYMBOLS = ["AUDUSD", "DXY", "EURUSD", "GBPUSD", "NZDUSD", "USDCAD", "USDCHF", "USDJPY"]
 
 TIMEFRAME = TIMEFRAME_H4
 RSI_OVERSOLD = 40.0
@@ -21,16 +20,16 @@ discord = Discord()
 discord.add_channel(WEBHOOK_URL)
 
 
-def build_signal_message(rsi: float, direction_type: int) -> str:
+def build_signal_message(rsi: float, direction) -> str:
     """Constructs the notification message based on RSI and trade direction."""
-    if direction_type == 0 and rsi <= RSI_OVERSOLD:
-        signal = f"{SYMBOL}: BUY  Opportunity!"
-    elif direction_type == 1 and rsi >= RSI_OVERBOUGHT:
-        signal = f"{SYMBOL}: SELL  Opportunity!"
+    if direction.get_type() == 0 and rsi <= RSI_OVERSOLD:
+        signal = f"{direction.get_symbol()} - BUY"
+    elif direction.get_type() == 1 and rsi >= RSI_OVERBOUGHT:
+        signal = f"{direction.get_symbol()} - SELL"
     else:
         return ""
 
-    return f"{signal}\nRSI 4H signal: {rsi:.2f}\n"
+    return f"{signal} [RSI 4H: {rsi:.2f}]\n"
 
 
 def rsi_4h() -> None:
@@ -41,20 +40,21 @@ def rsi_4h() -> None:
         rsis = {}
 
         for symbol in SYMBOLS:
-            rsis[symbol] = get_rsi(SYMBOL, TIMEFRAME)
+            rsis[symbol] = get_rsi(symbol, TIMEFRAME)
 
         commissions = get_commission(SYMBOLS)
         directions = get_trade_directions(commissions)
+
         messages = ""
 
         for i in range(len(SYMBOLS)):
-            messages += build_signal_message(rsis[SYMBOLS[i]], directions[i].get_type())
+            messages += build_signal_message(rsis[SYMBOLS[i]], directions[i])
 
         if messages:
-            logging.info("Sending notification: %s", messages)
             discord.notify_all(messages)
+            logging.info("Send notification:\n%s", messages)
         else:
-            logging.info("No trading opportunity — RSI: %.2f, Direction: %s", rsis, directions)
+            logging.info("No event.")
 
     except Exception as e:
         logging.error("Error in RSI workflow: %s", e, exc_info=True)
