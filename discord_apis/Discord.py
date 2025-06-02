@@ -12,4 +12,8 @@ class Discord:
     def notify_all(self, message):
         data = {"content": message}
         for channel in self.channels:
-            requests.post(channel, json=data)
+            try:
+                response = requests.post(channel, json=data)
+                response.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                print(f"Failed to send Discord notification: {e}")
