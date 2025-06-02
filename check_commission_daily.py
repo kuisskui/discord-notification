@@ -13,7 +13,7 @@ from utils import (
 )
 
 WEBHOOK_URL = settings.WEBHOOK_URL
-SYMBOLS = settings.SYMBOLS
+SYMBOLS = settings.TRACKED_SYMBOLS
 
 TITLE = "COMMISSION Check Daily"
 discord = Discord()
